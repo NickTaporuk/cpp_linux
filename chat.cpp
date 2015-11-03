@@ -6,11 +6,17 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <cstdio>
 
 using namespace std;
 
 int main()
 {
+    int sock, listener;
+    struct sockaddr_in addr;
+    char buf[1024];
+    int bytes_read;
+    int port = 3426;
 
     int client, server;
     int portNum =1500;
@@ -31,4 +37,43 @@ int main()
     std::cout<<"ServerSocket connection created ..."<< std::endl;
 
 
+    listener = socket(AF_INET, SOCK_STREAM, 0);
+
+    if(listener < 0)
+    {
+        perror("socket");
+        exit(1);
+    }
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if(bind(listener, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+    {
+        perror("bind");
+        exit(2);
+    }
+
+    listen(listener, 1);
+
+    while(1)
+    {
+        sock = accept(listener, NULL, NULL);
+        if(sock < 0)
+        {
+            perror("accept");
+            exit(3);
+        }
+
+        while(1)
+        {
+            bytes_read = recv(sock, buf, 1024, 0);
+            if(bytes_read <= 0) break;
+            send(sock, buf, bytes_read, 0);
+        }
+
+        close(sock);
+    }
+
+    return 0;
 }
